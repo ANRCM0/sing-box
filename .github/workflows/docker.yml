@@ -11,10 +11,15 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "The tag version you want to build"
+        description: "Source git ref to build (defaults to selected branch)"
+        required: false
+
+permissions:
+  contents: read
+  packages: write
 
 env:
-  REGISTRY_IMAGE: ghcr.io/sagernet/sing-box
+  REGISTRY_IMAGE: ghcr.io/anrcm0/sing-box
 
 jobs:
   build_binary:
@@ -260,7 +265,10 @@ jobs:
           fi
           echo "ref=$ref"
           echo "ref=$ref" >> $GITHUB_OUTPUT
-          if [[ $ref == *"-"* ]]; then
+          # Manual runs are for test images only, never clobber stable :latest.
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            latest=test
+          elif [[ "${{ github.event.release.prerelease }}" == "true" ]]; then
             latest=latest-beta
           else
             latest=latest
