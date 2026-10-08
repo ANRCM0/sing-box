@@ -80,6 +80,16 @@ You can also use `server_ports` to set a list of port ranges.
 - `mieru` branch has the latest code based on recent upstream releases. It may not be stable.
 - `release-*` branches record the references where binaries are published. Those branches don't change after creation.
 
+## ANRCM0 Docker images
+
+This fork publishes Docker images to `ghcr.io/anrcm0/sing-box` (not the upstream `sagernet` registry).
+
+- A manually dispatched [Publish Docker Images](https://github.com/ANRCM0/sing-box/actions/workflows/docker.yml) workflow builds the selected Git ref and publishes the mutable `:test` tag plus a ref-specific tag. Manual runs **never overwrite `:latest`**.
+- Publishing a stable GitHub Release produces a version tag and updates `:latest`.
+- Publishing a prerelease produces a version tag and updates `:latest-beta`, leaving stable `:latest` unchanged.
+
+This standalone image is separate from `ANRCM0/TX-Node`. TX-Node embeds the sing-box module as a Go dependency during its own build.
+
 ## Limitations
 
 - UDP outbound can't use domain name as server address.

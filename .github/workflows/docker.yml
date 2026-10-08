@@ -11,10 +11,15 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "The tag version you want to build"
+        description: "Source git ref to build (defaults to selected branch)"
+        required: false
+
+permissions:
+  contents: read
+  packages: write
 
 env:
-  REGISTRY_IMAGE: ghcr.io/sagernet/sing-box
+  REGISTRY_IMAGE: ghcr.io/anrcm0/sing-box
 
 jobs:
   build_binary:
@@ -40,14 +45,18 @@ jobs:
     steps:
       - name: Get commit to build
         id: ref
+        env:
+          REQUESTED_REF: ${{ github.event.inputs.tag }}
+          DEFAULT_REF: ${{ github.ref_name }}
         run: |-
-          if [[ -z "${{ github.event.inputs.tag }}" ]]; then
-            ref="${{ github.ref_name }}"
-          else
-            ref="${{ github.event.inputs.tag }}"
+          set -euo pipefail
+          ref="${REQUESTED_REF:-$DEFAULT_REF}"
+          if [[ ! "$ref" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]*$ ]]; then
+            echo "Invalid Docker source ref: $ref" >&2
+            exit 1
           fi
           echo "ref=$ref"
-          echo "ref=$ref" >> $GITHUB_OUTPUT
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
@@ -179,14 +188,18 @@ jobs:
     steps:
       - name: Get commit to build
         id: ref
+        env:
+          REQUESTED_REF: ${{ github.event.inputs.tag }}
+          DEFAULT_REF: ${{ github.ref_name }}
         run: |-
-          if [[ -z "${{ github.event.inputs.tag }}" ]]; then
-            ref="${{ github.ref_name }}"
-          else
-            ref="${{ github.event.inputs.tag }}"
+          set -euo pipefail
+          ref="${REQUESTED_REF:-$DEFAULT_REF}"
+          if [[ ! "$ref" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]*$ ]]; then
+            echo "Invalid Docker source ref: $ref" >&2
+            exit 1
           fi
           echo "ref=$ref"
-          echo "ref=$ref" >> $GITHUB_OUTPUT
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
@@ -252,15 +265,22 @@ jobs:
     steps:
       - name: Get commit to build
         id: ref
+        env:
+          REQUESTED_REF: ${{ github.event.inputs.tag }}
+          DEFAULT_REF: ${{ github.ref_name }}
         run: |-
-          if [[ -z "${{ github.event.inputs.tag }}" ]]; then
-            ref="${{ github.ref_name }}"
-          else
-            ref="${{ github.event.inputs.tag }}"
+          set -euo pipefail
+          ref="${REQUESTED_REF:-$DEFAULT_REF}"
+          if [[ ! "$ref" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]*$ ]]; then
+            echo "Invalid Docker source ref: $ref" >&2
+            exit 1
           fi
           echo "ref=$ref"
-          echo "ref=$ref" >> $GITHUB_OUTPUT
-          if [[ $ref == *"-"* ]]; then
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          # Manual runs are for test images only, never clobber stable :latest.
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            latest=test
+          elif [[ "${{ github.event.release.prerelease }}" == "true" ]]; then
             latest=latest-beta
           else
             latest=latest
